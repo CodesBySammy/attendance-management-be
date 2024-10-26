@@ -11,7 +11,7 @@ app.use(express.static('public'));
 
 const cors = require('cors');
 const allowedOrigins = ['https://exc-attendance.vercel.app/'];
-app.use(cors({
+app.use(cors(/*{
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
         if (allowedOrigins.indexOf(origin) === -1) {
@@ -20,7 +20,7 @@ app.use(cors({
         }
         return callback(null, true);
     }
-}));
+}*/));
 
 // Connect to MongoDB Atlas
 const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://samosa:Laudalele@mine.nlznt.mongodb.net/?retryWrites=true&w=majority&appName=mine';
