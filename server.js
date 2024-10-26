@@ -75,7 +75,7 @@ const authenticateToken = (req, res, next) => {
 app.get('/user/events', authenticateToken, async (req, res) => {
   const events = await Attendance.find().populate({
     path: 'records.studentId',
-    select: 'name registrationNumber',
+    select: 'name registrationNumber email',
   });
 
   const userAttendance = events.map(event => {
@@ -93,7 +93,7 @@ app.get('/user/events', authenticateToken, async (req, res) => {
 // Get Student List (Admin)
 app.get('/admin/students', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const students = await User.find({ role: 'user' }).select('email registrationNumber');
+  const students = await User.find({ role: 'user' }).select('email registrationNumber name');
   res.json(students);
 });
 
@@ -116,14 +116,15 @@ app.get('/admin/view-attendance', authenticateToken, async (req, res) => {
   const { eventName, eventDate } = req.query;
   const attendanceData = await Attendance.findOne({ eventName, eventDate }).populate({
     path: 'records.studentId',
-    select: 'name registrationNumber',
+    select: 'name registrationNumber email',
   });
 
-  if (!attendanceData) return res.json([]);
+  if (!attendanceData) return res.json({message: "This event does not exist."});
 
   const response = attendanceData.records.map(record => ({
     name: record.studentId?.name || "Name not found",
     registrationNumber: record.studentId?.registrationNumber || "Registration not found",
+    email:record.studentId?.email || "Email id not found",
     status: record.status,
   }));
   res.json(response);
@@ -136,7 +137,7 @@ app.get('/admin/download-attendance', authenticateToken, async (req, res) => {
   const { eventName, eventDate } = req.query;
   const attendanceData = await Attendance.findOne({ eventName, eventDate }).populate({
     path: 'records.studentId',
-    select: 'name registrationNumber',
+    select: 'name registrationNumber email',
   });
 
   if (!attendanceData) return res.sendStatus(404);
@@ -145,6 +146,7 @@ app.get('/admin/download-attendance', authenticateToken, async (req, res) => {
   const data = attendanceData.records.map(record => ({
     Name: record.studentId?.name || "Name not found",
     RegistrationNumber: record.studentId?.registrationNumber || "Registration not found",
+    Email:record.studentId?.email || "Email id not found",
     Status: record.status,
   }));
 
@@ -159,6 +161,7 @@ app.get('/admin/download-attendance', authenticateToken, async (req, res) => {
   const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   res.send(buffer);
 });
+
 
 // Start Server
 app.listen(3000, () => console.log('Server running on http://localhost:3000'));
