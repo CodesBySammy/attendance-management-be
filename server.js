@@ -42,6 +42,8 @@ const User = mongoose.model('User', userSchema);
 const attendanceSchema = new mongoose.Schema({
   eventName: String,
   eventDate: String,
+  eventStartTime:String,
+  eventEndTime:String,
   records: [{ studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, status: String }],
 });
 const Attendance = mongoose.model('Attendance', attendanceSchema);
@@ -83,6 +85,8 @@ app.get('/user/events', authenticateToken, async (req, res) => {
     return {
       eventName: event.eventName,
       eventDate: event.eventDate,
+      eventStartTime:event.eventStartTime,
+      eventEndTime:event.eventEndTime,
       status: record ? record.status : 'Not marked',
     };
   });
@@ -101,11 +105,11 @@ app.get('/admin/students', authenticateToken, async (req, res) => {
 app.post('/admin/post-attendance', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
 
-  const { eventName, eventDate, attendance } = req.body;
-  const existingEvent = await Attendance.findOne({ eventName, eventDate });
+  const { eventName, eventDate,eventStartTime,eventEndTime, attendance } = req.body;
+  const existingEvent = await Attendance.findOne({ eventName, eventDate,eventStartTime,eventEndTime });
   if (existingEvent) return res.json({ message: 'Event with this date already exists' });
 
-  await Attendance.create({ eventName, eventDate, records: attendance });
+  await Attendance.create({ eventName, eventDate,eventStartTime,eventEndTime, records: attendance });
   res.json({ message: 'Attendance posted successfully' });
 });
 
@@ -113,8 +117,8 @@ app.post('/admin/post-attendance', authenticateToken, async (req, res) => {
 app.get('/admin/view-attendance', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
 
-  const { eventName, eventDate } = req.query;
-  const attendanceData = await Attendance.findOne({ eventName, eventDate }).populate({
+  const { eventName, eventDate, eventStartTime, eventEndTime } = req.query;
+  const attendanceData = await Attendance.findOne({ eventName, eventDate,eventStartTime,eventEndTime }).populate({
     path: 'records.studentId',
     select: 'name registrationNumber email',
   });
@@ -125,6 +129,8 @@ app.get('/admin/view-attendance', authenticateToken, async (req, res) => {
     name: record.studentId?.name || "Name not found",
     registrationNumber: record.studentId?.registrationNumber || "Registration not found",
     email:record.studentId?.email || "Email id not found",
+    eventStartTime:record.studentId?.eventStartTime || "Event Start Time not found",
+    eventEndTime:record.studentId?.eventEndTime || "Event End Time not found",
     status: record.status,
   }));
   res.json(response);
@@ -134,8 +140,8 @@ app.get('/admin/view-attendance', authenticateToken, async (req, res) => {
 app.get('/admin/download-attendance', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
 
-  const { eventName, eventDate } = req.query;
-  const attendanceData = await Attendance.findOne({ eventName, eventDate }).populate({
+  const { eventName, eventDate,eventStartTime,eventEndTime } = req.query;
+  const attendanceData = await Attendance.findOne({ eventName, eventDate,eventStartTime,eventEndTime }).populate({
     path: 'records.studentId',
     select: 'name registrationNumber email',
   });
@@ -154,7 +160,7 @@ app.get('/admin/download-attendance', authenticateToken, async (req, res) => {
   xlsx.utils.book_append_sheet(workbook, worksheet, 'Attendance');
 
   // Set headers for direct download without saving
-  res.setHeader('Content-Disposition', `attachment; filename=attendance_${eventName}_${eventDate}.xlsx`);
+  res.setHeader('Content-Disposition', `attachment; filename=attendance_${eventName}_${eventDate}_${eventStartTime}_${eventEndTime}.xlsx`);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
   // Write workbook directly to response
