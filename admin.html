@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Admin Panel</h1>
+  <button id="logoutButton">Logout</button>
+
+  <!-- Create Event Section -->
+  <section id="createEventSection">
+    <h2>Create Event and Post Attendance</h2>
+    <label for="eventName">Event Name:</label>
+    <input type="text" id="eventName" required>
+    <label for="eventDate">Event Date:</label>
+    <input type="date" id="eventDate" required>
+    <button id="createEvent">Create Event</button>
+
+    <h3>Mark Attendance</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Registration Number</th>
+          <th>Email</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="studentsTableBody"></tbody>
+    </table>
+    <button id="postAttendance">Post Attendance</button>
+    <p id="eventMessage"></p>
+  </section>
+
+  <!-- View Attendance Section -->
+  <section id="viewAttendanceSection">
+    <h2>View and Download Attendance</h2>
+    <label for="viewEventName">Event Name:</label>
+    <input type="text" id="viewEventName" required>
+    <label for="viewEventDate">Event Date:</label>
+    <input type="date" id="viewEventDate" required>
+    <button id="viewAttendance">View Attendance</button>
+    <button id="downloadAttendance">Download Attendance (Excel)</button>
+
+    <h3>Attendance Records</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Registration Number</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceTableBody"></tbody>
+    </table>
+  </section>
+
+  <script src="admin.js"></script>
+</body>
+</html>
