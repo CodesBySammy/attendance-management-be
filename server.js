@@ -197,6 +197,74 @@ app.get('/admin/event-summary', authenticateToken, async (req, res) => {
   }
 });
 
+// Get Attendance Record for Editing (Admin Only)
+app.get('/admin/edit-attendance', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+
+  const { eventName, eventDate, eventStartTime, eventEndTime, registrationNumber } = req.query;
+
+  const event = await Attendance.findOne({
+    eventName,
+    eventDate,
+    eventStartTime,
+    eventEndTime,
+  }).populate({
+    path: 'records.studentId',
+    match: { registrationNumber: registrationNumber },
+    select: 'name registrationNumber',
+  });
+
+  if (!event || event.records.length === 0) {
+    return res.status(404).json({ message: 'Attendance record not found for the specified student and event.' });
+  }
+
+  // Return the attendance record of the specific student
+  const attendanceRecord = event.records.find(r => r.studentId.registrationNumber === registrationNumber);
+  res.json({
+    event: {
+      name: event.eventName,
+      date: event.eventDate,
+      startTime: event.eventStartTime,
+      endTime: event.eventEndTime,
+    },
+    student: {
+      name: attendanceRecord.studentId.name,
+      registrationNumber: attendanceRecord.studentId.registrationNumber,
+      status: attendanceRecord.status,
+    }
+  });
+});
+
+// Update Attendance Record (Admin Only)
+app.put('/admin/update-attendance', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+
+  const { eventName, eventDate, eventStartTime, eventEndTime, registrationNumber, newStatus } = req.body;
+
+  const event = await Attendance.findOne({
+    eventName,
+    eventDate,
+    eventStartTime,
+    eventEndTime,
+  });
+
+  if (!event) return res.status(404).json({ message: 'Event not found.' });
+
+  // Find the attendance record for the student
+  const attendanceRecord = event.records.find(
+    r => r.studentId && r.studentId.registrationNumber === registrationNumber
+  );
+
+  if (!attendanceRecord) {
+    return res.status(404).json({ message: 'Student attendance record not found.' });
+  }
+
+  // Update the status
+  attendanceRecord.status = newStatus;
+  await event.save();
+
+  res.json({ message: 'Attendance updated successfully.' });
+});
 
 
 // Start Server
