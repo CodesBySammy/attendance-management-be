@@ -168,6 +168,36 @@ app.get('/admin/download-attendance', authenticateToken, async (req, res) => {
   res.send(buffer);
 });
 
+// Event Summary (Admin)
+// Event Summary Route (Admin)
+app.get('/admin/event-summary', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+
+  try {
+    const events = await Attendance.find();
+
+    const summary = events.map(event => {
+      const presentCount = event.records.filter(record => record.status === 'present').length;
+      const absentCount = event.records.filter(record => record.status === 'absent').length;
+
+      return {
+        eventName: event.eventName,
+        eventDate: event.eventDate,
+        eventStartTime: event.eventStartTime,
+        eventEndTime: event.eventEndTime,
+        presentCount,
+        absentCount
+      };
+    });
+
+    res.json(summary);
+  } catch (error) {
+    console.error('Error fetching event summary:', error);
+    res.status(500).json({ message: 'Error fetching event summary' });
+  }
+});
+
+
 
 // Start Server
 app.listen(3000, () => console.log('Server running on http://localhost:3000'));
