@@ -196,7 +196,7 @@ app.get('/admin/event-summary', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Error fetching event summary' });
   }
 });
-
+/*
 // Get Attendance Record for Editing (Admin Only)
 app.get('/admin/edit-attendance', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
@@ -266,6 +266,6 @@ app.put('/admin/update-attendance', authenticateToken, async (req, res) => {
   res.json({ message: 'Attendance updated successfully.' });
 });
 
-
+*/
 // Start Server
 app.listen(3000, () => console.log('Server running on http://localhost:3000'));
