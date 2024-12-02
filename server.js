@@ -173,11 +173,19 @@ app.get('/admin/event-summary', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
 
   try {
-    const events = await Attendance.find();
+    const events = await Attendance.find().populate({
+      path: 'records.studentId',
+      select: 'role'
+    });
 
     const summary = events.map(event => {
-      const presentCount = event.records.filter(record => record.status === 'present').length;
-      const absentCount = event.records.filter(record => record.status === 'absent').length;
+      // Filter and count only user records
+      const userRecords = event.records.filter(record => 
+        record.studentId && record.studentId.role === 'user'
+      );
+
+      const presentCount = userRecords.filter(record => record.status === 'present').length;
+      const absentCount = userRecords.filter(record => record.status === 'absent').length;
 
       return {
         eventName: event.eventName,
@@ -195,6 +203,7 @@ app.get('/admin/event-summary', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Error fetching event summary' });
   }
 });
+
 
 // Edit Attendance (Admin)
 app.post('/admin/edit-attendance', authenticateToken, async (req, res) => {
