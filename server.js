@@ -118,19 +118,18 @@ app.get('/admin/view-attendance', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
 
   const { eventName, eventDate, eventStartTime, eventEndTime } = req.query;
-  const attendanceData = await Attendance.findOne({ eventName, eventDate,eventStartTime,eventEndTime }).populate({
+  const attendanceData = await Attendance.findOne({ eventName, eventDate, eventStartTime, eventEndTime }).populate({
     path: 'records.studentId',
-    select: 'name registrationNumber email',
+    select: 'name registrationNumber email _id',
   });
 
   if (!attendanceData) return res.json({message: "This event does not exist."});
 
   const response = attendanceData.records.map(record => ({
+    _id: record.studentId?._id,
     name: record.studentId?.name || "Name not found",
     registrationNumber: record.studentId?.registrationNumber || "Registration not found",
-    email:record.studentId?.email || "Email id not found",
-    eventStartTime:record.studentId?.eventStartTime || "Event Start Time not found",
-    eventEndTime:record.studentId?.eventEndTime || "Event End Time not found",
+    email: record.studentId?.email || "Email id not found",
     status: record.status,
   }));
   res.json(response);
@@ -196,76 +195,71 @@ app.get('/admin/event-summary', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Error fetching event summary' });
   }
 });
-/*
-// Get Attendance Record for Editing (Admin Only)
-app.get('/admin/edit-attendance', authenticateToken, async (req, res) => {
+
+// Edit Attendance (Admin)
+app.post('/admin/edit-attendance', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
 
-  const { eventName, eventDate, eventStartTime, eventEndTime, registrationNumber } = req.query;
+  try {
+    const { 
+      studentId, 
+      eventName, 
+      eventDate, 
+      eventStartTime, 
+      eventEndTime, 
+      newStatus 
+    } = req.body;
 
-  const event = await Attendance.findOne({
-    eventName,
-    eventDate,
-    eventStartTime,
-    eventEndTime,
-  }).populate({
-    path: 'records.studentId',
-    match: { registrationNumber: registrationNumber },
-    select: 'name registrationNumber',
-  });
+    // Find the specific event
+    const attendanceRecord = await Attendance.findOne({ 
+      eventName, 
+      eventDate, 
+      eventStartTime, 
+      eventEndTime 
+    });
 
-  if (!event || event.records.length === 0) {
-    return res.status(404).json({ message: 'Attendance record not found for the specified student and event.' });
-  }
-
-  // Return the attendance record of the specific student
-  const attendanceRecord = event.records.find(r => r.studentId.registrationNumber === registrationNumber);
-  res.json({
-    event: {
-      name: event.eventName,
-      date: event.eventDate,
-      startTime: event.eventStartTime,
-      endTime: event.eventEndTime,
-    },
-    student: {
-      name: attendanceRecord.studentId.name,
-      registrationNumber: attendanceRecord.studentId.registrationNumber,
-      status: attendanceRecord.status,
+    if (!attendanceRecord) {
+      return res.json({ 
+        success: false, 
+        message: 'Event not found' 
+      });
     }
-  });
-});
 
-// Update Attendance Record (Admin Only)
-app.put('/admin/update-attendance', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'admin') return res.sendStatus(403);
+    // Find and update the specific student's attendance
+    const studentRecordIndex = attendanceRecord.records.findIndex(
+      record => record.studentId.toString() === studentId
+    );
 
-  const { eventName, eventDate, eventStartTime, eventEndTime, registrationNumber, newStatus } = req.body;
+    if (studentRecordIndex === -1) {
+      // If not found, log some debugging information
+      console.log('Debugging Edit Attendance:');
+      console.log('Student ID received:', studentId);
+      console.log('Attendance Records:', attendanceRecord.records.map(r => r.studentId.toString()));
 
-  const event = await Attendance.findOne({
-    eventName,
-    eventDate,
-    eventStartTime,
-    eventEndTime,
-  });
+      return res.json({ 
+        success: false, 
+        message: 'Student attendance record not found' 
+      });
+    }
 
-  if (!event) return res.status(404).json({ message: 'Event not found.' });
+    // Update the attendance status
+    attendanceRecord.records[studentRecordIndex].status = newStatus;
 
-  // Find the attendance record for the student
-  const attendanceRecord = event.records.find(
-    r => r.studentId && r.studentId.registrationNumber === registrationNumber
-  );
+    // Save the updated attendance record
+    await attendanceRecord.save();
 
-  if (!attendanceRecord) {
-    return res.status(404).json({ message: 'Student attendance record not found.' });
+    res.json({ 
+      success: true, 
+      message: 'Attendance updated successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error editing attendance:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
   }
-
-  // Update the status
-  attendanceRecord.status = newStatus;
-  await event.save();
-
-  res.json({ message: 'Attendance updated successfully.' });
 });
-
-*/
 // Start Server
 app.listen(3000, () => console.log('Server running on http://localhost:3000'));
