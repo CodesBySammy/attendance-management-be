@@ -261,5 +261,41 @@ app.post('/admin/edit-attendance', authenticateToken, async (req, res) => {
     });
   }
 });
+
+// Delete Event Attendance (Admin)
+app.delete('/admin/delete-event', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+
+  try {
+    const { eventName, eventDate, eventStartTime, eventEndTime } = req.body;
+
+    const result = await Attendance.deleteOne({ 
+      eventName, 
+      eventDate, 
+      eventStartTime, 
+      eventEndTime 
+    });
+
+    if (result.deletedCount === 0) {
+      return res.json({ 
+        success: false, 
+        message: 'Event not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Event attendance deleted successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
 // Start Server
 app.listen(3000, () => console.log('Server running on http://localhost:3000'));
