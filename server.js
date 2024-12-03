@@ -75,23 +75,31 @@ const authenticateToken = (req, res, next) => {
 
 // Get Events and User Attendance Status
 app.get('/user/events', authenticateToken, async (req, res) => {
-  const events = await Attendance.find().populate({
-    path: 'records.studentId',
-    select: 'name registrationNumber email',
-  });
+  try {
+    // Find all events
+    const events = await Attendance.find();
 
-  const userAttendance = events.map(event => {
-    const record = event.records.find(r => r.studentId._id.toString() === req.user.userId.toString());
-    return {
-      eventName: event.eventName,
-      eventDate: event.eventDate,
-      eventStartTime:event.eventStartTime,
-      eventEndTime:event.eventEndTime,
-      status: record ? record.status : 'Not marked',
-    };
-  });
+    // Find user attendance for the current user
+    const userAttendance = events.map(event => {
+      // Find the record for the current user in this event
+      const userRecord = event.records.find(
+        r => r.studentId.toString() === req.user.userId
+      );
 
-  res.json(userAttendance);
+      return {
+        eventName: event.eventName,
+        eventDate: event.eventDate,
+        eventStartTime: event.eventStartTime,
+        eventEndTime: event.eventEndTime,
+        status: userRecord ? userRecord.status : 'Not marked',
+      };
+    });
+
+    res.json(userAttendance);
+  } catch (error) {
+    console.error('Error fetching user events:', error);
+    res.status(500).json({ message: 'Error fetching events' });
+  }
 });
 
 // Get Student List (Admin)
