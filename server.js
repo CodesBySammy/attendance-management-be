@@ -4,13 +4,14 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const xlsx = require('xlsx');
 require('dotenv').config();
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-/*const cors = require('cors');
-const allowedOrigins = ['https://exc-attendance.vercel.app/'];
+
+/*const allowedOrigins = ['https://exc-attendance.vercel.app/'];
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
